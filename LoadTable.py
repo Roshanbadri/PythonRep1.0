@@ -17,13 +17,14 @@ EmpName=''
 Issue=0
 Release=''
 Email=''
-Flg=''
+Flg=''  
 Id=0
 str1=''
 str2=''
 items=[]
 a=[]
 InsFlg=''
+rowcount=0
 conn_str = (r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
                       r'DBQ=C:\PythonProgram\Dashboard\Database\Dashboard.accdb;')
 accApp = Dispatch("Access.Application")
@@ -41,7 +42,7 @@ try:
                       Email varchar(150));""")
     accApp.DoCmd.CloseDatabase
     accApp.Quit
-    cmdCommand = "taskkill /f /im MSaccess.exe"   #specify your cmd command
+    cmdCommand = "taskkill /f /im MSaccess.exe"
     process = subprocess.Popen(cmdCommand.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
     dat = db.connect(conn_str)
@@ -49,11 +50,11 @@ try:
     cur.execute("insert into Release(EmpName,Issues,Release,Email) values ('New','9','R3','Test.com')")
     cur.execute("insert into Release(EmpName,Issues,Release,Email) values ('New2','15','R3','Test.com')")
     cur.commit
+    rowcount=2
 except:
     dat = db.connect(conn_str)
     cur = dat.cursor()
 class App(QWidget):
-
     def __init__(self):
         super(App,self).__init__()
         self.title = 'Qt5 Window'
@@ -62,7 +63,6 @@ class App(QWidget):
         self.width = 1300
         self.height = 700
         self.initUI()
- 
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
@@ -78,7 +78,6 @@ class App(QWidget):
         self.toolbar = NavigationToolbar(self.canvas, self)
         self.layout.addWidget(self.toolbar)
         self.layout.addWidget(self.canvas)
-        #self.LoadChart()mself
         button = QPushButton('Load Chart',self)
         button.move(450,660) 
         button.clicked.connect(self.LoadChart)
@@ -98,11 +97,13 @@ class App(QWidget):
     def Refresh(self):
         self.RefreshTable()
     def RefreshTable(self):
-        self.tableWidget.setRowCount(4)
-        self.tableWidget.setColumnCount(4)
-        self.tableWidget.setHorizontalHeaderLabels(['EmpName', 'Issue', 'Release', 'Email'])
+        global rowcount
         cur.execute('select * from Release')
         all_data = cur.fetchall()
+        rowcount = len(all_data)
+        self.tableWidget.setRowCount(rowcount)
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setHorizontalHeaderLabels(['EmpName', 'Issue', 'Release', 'Email'])
         for i ,item in enumerate(all_data):
             Id=QTableWidgetItem(str(item[0]))
             EmpName = QTableWidgetItem(str(item[1]))
@@ -121,7 +122,7 @@ class App(QWidget):
         header=[]
         data=[]
         values=[]
-        ax = self.figure.add_subplot(111)
+        ax = self.figure.add_subplot(111,position=[0.09, 0.12, 0.35, 0.75])
         for head in res.description:
             header.append(head[0])
         for vals in all_data:
@@ -131,12 +132,20 @@ class App(QWidget):
         itemlst=[]
         x=[]
         y=[]
+        z=[]
         for items in values[0:]:
             x.append(items[2])
             y.append(items[1])
+            z.append(items[3])
         #ax.xlabel("EmpName")
-        #ax.ylabel("Issues")   
+        #ax.ylabel("Issues")  
+        print z
         ax.bar(y, x, align = 'center') 
+        #ax.set_xlabel('Employees')
+        #ax.set_Ylabel('Issues')
+        #plot.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0.2, hspace=02)
+        ax2 = self.figure.add_subplot(111,position=[0.55, 0.12, 0.40, 0.75])
+        ax2.plot(y,x,z)
         self.canvas.draw()
     def CreateTable(self):
         self.tableWidget = QTableWidget()
@@ -182,7 +191,7 @@ class App(QWidget):
                     str1="update Release set EmpName='"+EmpName+"', Issues=%d"%Issue+" where ID=%d"%Id
                 elif (EmpName != '' or Issue == '' and Release == '' and Email == ''):
                     str1="update Release set EmpName='"+EmpName+"' where ID=%d"%Id
-            if(InsFlg=='Y'):
+            else:
                 str1="insert into Release(EmpName,Issues,Release,Email) values ('"+EmpName+"',%d"%Issue+",'"+Release+"','"+Email+"')"
     def on_click(self):
         buttonReply = QMessageBox.question(self, 'Alert', "Do you want to close the window?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -190,18 +199,13 @@ class App(QWidget):
             cur.commit()
             cur.close()
             self.close()
-        else:
-            pass
     def Clk_Save(self):
         global Flg
         global str1
         if Flg is 'Y':
             cur.execute(str1)
             cur.commit()
-        else:
-            pass
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
     sys.exit(app.exec_())
-
