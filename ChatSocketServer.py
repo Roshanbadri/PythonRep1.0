@@ -33,6 +33,7 @@ def check_greeting(sentence):
 
     if sentence.lower() in greet_key:
         return random.choice(response)
+
     elif sentence in test_key:
         if len(memory)<1:
             resp='You can test this'
@@ -59,7 +60,8 @@ def check_greeting(sentence):
         return "!!Bye"
     else:
         greet_key.append(sentence)
-        return random.choice(response)
+        response.append(sentence)
+        return sentence+" back at you"
 def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
 
@@ -88,7 +90,7 @@ def handle_client(client):  # Takes client socket as argument.
             break
 
 
-       
+      
 clients = {}
 addresses = {}
 
